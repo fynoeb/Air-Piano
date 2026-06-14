@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default-deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions for hardened validation
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Match users profiles
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['name', 'nim', 'institution', 'classCode', 'createdAt'])
+                    && request.resource.data.keys().size() == 5
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 100
+                    && request.resource.data.nim is string && request.resource.data.nim.size() <= 50
+                    && request.resource.data.institution is string && request.resource.data.institution.size() <= 100
+                    && request.resource.data.classCode is string && request.resource.data.classCode.size() <= 100
+                    && request.resource.data.createdAt == request.time;
+      
+      allow update: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['name', 'nim', 'institution', 'classCode', 'createdAt'])
+                    && request.resource.data.keys().size() == 5
+                    && request.resource.data.name is string && request.resource.data.name.size() <= 100
+                    && request.resource.data.nim is string && request.resource.data.nim.size() <= 50
+                    && request.resource.data.institution is string && request.resource.data.institution.size() <= 100
+                    && request.resource.data.classCode is string && request.resource.data.classCode.size() <= 100
+                    && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // Match registered usernames repository
+    match /usernames/{username} {
+      allow read: if true;
+      allow create, update: if isSignedIn()
+                            && request.resource.data.keys().hasAll(['uid', 'registered', 'createdAt'])
+                            && request.resource.data.keys().size() == 3
+                            && request.resource.data.uid is string && request.resource.data.uid.size() <= 128
+                            && request.resource.data.registered is bool
+                            && (request.resource.data.createdAt == request.time || request.resource.data.createdAt == resource.data.createdAt);
+    }
+
+    // Match test connection documents
+    match /test/{document} {
+      allow read: if true;
+    }
+
+    // Match compositions subcoll
+    match /users/{userId}/compositions/{compositionId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+                    && request.resource.data.keys().hasAll(['title', 'notes', 'duration', 'artist', 'studentNim', 'tempo', 'createdAt'])
+                    && request.resource.data.keys().size() == 7
+                    && request.resource.data.title is string && request.resource.data.title.size() <= 150
+                    && request.resource.data.notes is list
+                    && request.resource.data.duration is number
+                    && request.resource.data.artist is string && request.resource.data.artist.size() <= 100
+                    && request.resource.data.studentNim is string && request.resource.data.studentNim.size() <= 100
+                    && request.resource.data.tempo is number
+                    && request.resource.data.createdAt == request.time;
+                    
+      allow delete: if isOwner(userId);
+    }
+  }
+}

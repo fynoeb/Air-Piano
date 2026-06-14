@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with academic details",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "nim": {
+          "type": "string",
+          "description": "NIM (Student Identification Number)"
+        },
+        "institution": {
+          "type": "string",
+          "description": "Academic institution name"
+        },
+        "classCode": {
+          "type": "string",
+          "description": "Academic class or subject code"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Profile creation timestamp"
+        }
+      },
+      "required": ["name", "nim", "institution", "classCode", "createdAt"]
+    },
+    "Composition": {
+      "title": "Composition",
+      "description": "A musical score/composition recorded by a user",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Composition name or title"
+        },
+        "notes": {
+          "type": "array",
+          "description": "List of recorded note events"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Recording duration in seconds"
+        },
+        "artist": {
+          "type": "string",
+          "description": "The name of the artist/creator"
+        },
+        "studentNim": {
+          "type": "string",
+          "description": "The student identification number or username of the creator"
+        },
+        "tempo": {
+          "type": "number",
+          "description": "Optional/current tempo configuration"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp of composition"
+        }
+      },
+      "required": ["title", "notes", "duration", "artist", "studentNim", "tempo", "createdAt"]
+    },
+    "Username": {
+      "title": "Username",
+      "description": "Unique registered username registry entry",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Associated user ID string"
+        },
+        "registered": {
+          "type": "boolean",
+          "description": "Whether the username is registered"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["uid", "registered", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User account and profile data"
+    },
+    "/usernames/{username}": {
+      "schema": { "$ref": "#/entities/Username" },
+      "description": "Globally unique registered usernames repository"
+    },
+    "/users/{userId}/compositions/{compositionId}": {
+      "schema": { "$ref": "#/entities/Composition" },
+      "description": "Saved piano recording scores"
+    }
+  }
+}
