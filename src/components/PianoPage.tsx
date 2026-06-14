@@ -163,7 +163,10 @@ export default function PianoPage({
       });
     });
 
-    keyBoxes.current = boxes;
+    // Sort key boxes so that black keys come first.
+    // This ensures black keys are checked first during collision detection,
+    // avoiding being bypassed by the underlying white keys bounds.
+    keyBoxes.current = boxes.sort((a, b) => (b.isBlack ? 1 : 0) - (a.isBlack ? 1 : 0));
   }, []);
 
   // Set up the MediaPipe Model loading
@@ -522,8 +525,7 @@ export default function PianoPage({
 
   // Draw elegant classical piano overlay on the video feeds
   const drawPianoOverlay = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    // Draw active key collision bounding feedback rectangles with clean translucent colors
-    keyBoxes.current.forEach(key => {
+    const drawSingleKey = (key: KeyBoundingBox) => {
       const isCurrentlyPressed = activeKeys.has(key.index);
       
       const xS = key.xStart * w;
@@ -555,7 +557,11 @@ export default function PianoPage({
         ctx.textAlign = 'center';
         ctx.fillText(key.note, xS + kw / 2, yE - 8);
       }
-    });
+    };
+
+    // Draw white keys first so black keys sit on top
+    keyBoxes.current.filter(k => !k.isBlack).forEach(drawSingleKey);
+    keyBoxes.current.filter(k => k.isBlack).forEach(drawSingleKey);
   };
 
   // Draw joint mapping skeleton from MediaPipe Hands data
